@@ -8,6 +8,11 @@ No multiple choice. No tutorials. Just a terminal, a problem, and your skills.
 
 ---
 
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/elafkaihi/BreakOps)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/elafkaihi/BreakOps)
+
+---
+
 ## 🧠 Philosophy
 
 Most DevOps learning platforms teach you how things *should* work.
@@ -20,26 +25,37 @@ Every lab drops you into a realistic broken scenario ; a disk that's full, a ser
 
 ## 🚀 Quick Start
 
+### ☁️ Zero install (recommended)
+
+Click one of the buttons above to launch BreakOps instantly in your browser — no Docker or Git setup needed.
+
+| | Gitpod | GitHub Codespaces |
+|---|---|---|
+| **Free tier** | 50h/month | 60h/month |
+| **Speed** | ~30s | ~45s |
+| **Requires** | GitHub/GitLab account | GitHub account |
+
+### 💻 Local install
+
 ```bash
-# Install BreakOps CLI
-git clone https://github.com/your-username/breakops.git
-cd breakops
+git clone https://github.com/elafkaihi/BreakOps.git
+cd BreakOps
 ./install.sh
-
-# Launch your first lab
 breakops start linux-001
-
-# Need a hint?
-breakops hint
-
-# Validate your fix
-breakops check
-
-# Give up? (no shame)
-breakops solution
 ```
 
 > **Requirements:** Docker, Bash, Git
+
+### 🎮 Commands
+
+```bash
+breakops list               # List all available labs
+breakops start <lab-id>     # Launch a broken environment
+breakops hint               # Progressive hint (run from another terminal)
+breakops check              # Validate your fix
+breakops solution           # Reveal the full solution
+breakops reset              # Reset the lab to broken state
+```
 
 ---
 

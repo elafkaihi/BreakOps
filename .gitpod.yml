@@ -1,0 +1,13 @@
+image: gitpod/workspace-docker
+
+tasks:
+  - name: Install BreakOps
+    init: |
+      chmod +x ./install.sh ./breakops
+      sudo ln -sf $(pwd)/breakops /usr/local/bin/breakops
+      echo "✅ BreakOps ready! Run: breakops list"
+    command: breakops list
+
+vscode:
+  extensions:
+    - ms-azuretools.vscode-docker
