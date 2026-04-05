@@ -1,0 +1,32 @@
+id: linux-005
+title: "SSH Lockout"
+category: linux
+difficulty: medium
+objective: "Nobody can SSH into the server after last night's 'security hardening'. Fix it without breaking actual security."
+
+hints:
+  - "Test the SSH config first before trying to connect: sshd -t"
+  - "sshd -t will show you configuration errors with file and line number."
+  - "Once the config is valid, check the permissions on /root/.ssh/ and its contents."
+  - "SSH is very strict about permissions: ~/.ssh must be 700 and authorized_keys must be 600."
+
+solution: |
+  # Step 1 — Test sshd config
+  sshd -t
+  # Error: /etc/ssh/sshd_config line 14: unsupported option "PermitRootLogin yes please"
+
+  # Step 2 — Fix the bad config line
+  vim /etc/ssh/sshd_config
+  # Find line 14, change "PermitRootLogin yes please" to "PermitRootLogin yes"
+
+  # Step 3 — Test again
+  sshd -t
+  # Should pass silently
+
+  # Step 4 — Fix .ssh directory permissions
+  chmod 700 /root/.ssh
+  chmod 600 /root/.ssh/authorized_keys
+
+  # Step 5 — Verify everything
+  sshd -t && echo "Config OK"
+  ls -la /root/.ssh/

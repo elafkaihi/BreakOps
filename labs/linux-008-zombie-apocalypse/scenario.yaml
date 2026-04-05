@@ -1,0 +1,29 @@
+id: linux-008
+title: "Zombie Apocalypse"
+category: linux
+difficulty: hard
+objective: "The server is sluggish and 'ps aux' shows dozens of zombie processes (Z state). PIDs are exhausted. Fix it."
+
+hints:
+  - "List zombie processes: ps aux | grep ' Z ' — note how many there are and who their parent is."
+  - "Zombies can't be killed with kill -9. You must kill their PARENT process to clean them up."
+  - "Find the parent PID: ps -o ppid= -p <zombie_pid> — then kill that parent."
+  - "The parent process is a rogue script in /app. Kill it with: pkill -f zombie_factory — this reaps all zombies."
+
+solution: |
+  # Step 1 — Identify zombies
+  ps aux | grep ' Z '
+  # Many processes with Z status
+
+  # Step 2 — Find the parent
+  # Pick any zombie PID, find its parent:
+  ps -o ppid= -p <zombie_pid>
+  # or: ps auxf | grep -A2 zombie
+
+  # Step 3 — Kill the parent (this reaps all zombies)
+  pkill -f zombie_factory
+  # or: kill <parent_pid>
+
+  # Step 4 — Verify zombies are gone
+  ps aux | grep ' Z '
+  # No output — all zombies reaped

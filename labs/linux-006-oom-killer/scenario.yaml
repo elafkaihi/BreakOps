@@ -1,0 +1,33 @@
+id: linux-006
+title: "OOM Killer Strikes"
+category: linux
+difficulty: medium
+docker_flags: --memory=200m
+objective: "The app keeps dying every few minutes. Ops suspects a memory issue. Find the culprit and stop it."
+
+hints:
+  - "Check the kernel logs for OOM evidence: dmesg | grep -i oom  or  cat /var/log/kern.log"
+  - "Use 'ps aux --sort=-%mem' to find the process consuming the most memory right now."
+  - "There is a rogue process running in the background eating memory. Find it with ps aux."
+  - "Kill the memory hog process (kill <pid>), then remove its cron entry so it doesn't come back."
+
+solution: |
+  # Step 1 — Check OOM evidence
+  dmesg | grep -i "oom\|killed"
+  cat /var/log/kern.log | grep -i oom
+
+  # Step 2 — Find the memory hog
+  ps aux --sort=-%mem | head -10
+  # You'll see memhog.sh or python3 consuming huge memory
+
+  # Step 3 — Kill it
+  pkill -f memhog
+  # or: kill <pid>
+
+  # Step 4 — Remove the cron entry so it doesn't restart
+  rm /etc/cron.d/memhog
+  # or: crontab -l | grep -v memhog | crontab -
+
+  # Step 5 — Verify memory is freed
+  free -h
+  ps aux | grep memhog
