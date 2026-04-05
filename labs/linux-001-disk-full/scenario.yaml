@@ -1,0 +1,31 @@
+id: linux-001
+title: "Disk Full"
+category: linux
+difficulty: easy
+docker_flags: --tmpfs /app:size=150m
+objective: "The application stopped writing logs 10 minutes ago. On-call just pinged you. Fix it."
+
+hints:
+  - "Start with the basics: check the disk usage on the server."
+  - "df -h will show you disk usage per filesystem. Look for anything at 100%."
+  - "Once you found the full filesystem, use du -sh /app/* to drill down into which directory is the problem."
+  - "There are large .log files in /app/logs/ that don't need to be kept. Remove the oldest ones."
+
+solution: |
+  # Step 1 — Check overall disk usage
+  df -h
+  # You'll see /app is at 100%
+
+  # Step 2 — Find what's eating the space
+  du -sh /app/*
+  du -sh /app/logs/*
+
+  # Step 3 — Remove the bloated log files
+  rm /app/logs/*.log
+
+  # Step 4 — Verify
+  df -h
+  # /app should now show free space
+
+  # Optional: restart the app to resume logging
+  # (out of scope for this lab)
