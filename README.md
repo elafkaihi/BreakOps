@@ -47,7 +47,7 @@ breakops solution
 
 | Category | Status | Labs |
 |---|---|---|
-| 🐧 Linux / System | ✅ Available | 3 labs |
+| 🐧 Linux / System | ✅ Available | 8 labs |
 | ☸️ Kubernetes | 🔜 Coming soon | — |
 | 🏗️ Terraform / IaC | 🔜 Coming soon | — |
 | ⚙️ CI/CD | 🔜 Coming soon | — |
@@ -61,7 +61,12 @@ breakops solution
 |---|---|---|---|
 | `linux-001` | Disk Full | 🟢 Easy | Disk usage, `df`, `du`, log cleanup |
 | `linux-002` | Permission Hell | 🟡 Medium | `chmod`, `chown`, file permissions |
-| `linux-003` | Service Won't Start | 🟡 Medium | `systemctl`, journalctl, service debugging |
+| `linux-003` | Service Won't Start | 🟡 Medium | nginx config, `nginx -t`, service debugging |
+| `linux-004` | Cron Gone Silent | 🟢 Easy | `crontab`, cron daemon, script permissions |
+| `linux-005` | SSH Lockout | 🟡 Medium | `sshd_config`, `sshd -t`, `.ssh` permissions |
+| `linux-006` | OOM Killer Strikes | 🟡 Medium | `dmesg`, `ps`, memory hog, `pkill` |
+| `linux-007` | Firewall Blocked | 🟡 Medium | `iptables`, port rules, `ss -tlnp` |
+| `linux-008` | Zombie Apocalypse | 🔴 Hard | Zombie processes, `ppid`, process reaping |
 
 ---
 
