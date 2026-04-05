@@ -1,0 +1,35 @@
+id: linux-004
+title: "Cron Gone Silent"
+category: linux
+difficulty: easy
+objective: "The nightly backup hasn't run in 3 days. No errors, no alerts. Just silence. Figure out why and fix it."
+
+hints:
+  - "Check if cron is actually running: pgrep cron or service cron status"
+  - "Look at the crontab: crontab -l and also check /etc/cron.d/"
+  - "Even if cron runs, the script it calls might have issues. Check /app/backup.sh permissions."
+  - "Two things are broken: cron is not running, and the backup script is not executable."
+
+solution: |
+  # Step 1 — Check if cron daemon is running
+  pgrep cron
+  # Nothing — cron is stopped
+
+  # Step 2 — Start cron
+  service cron start
+  # or: cron (starts the daemon directly in container)
+
+  # Step 3 — Check the crontab
+  cat /etc/cron.d/backup
+  # Points to /app/backup.sh
+
+  # Step 4 — Check backup.sh permissions
+  ls -la /app/backup.sh
+  # -rw-r--r-- (not executable!)
+
+  # Step 5 — Fix the permission
+  chmod +x /app/backup.sh
+
+  # Step 6 — Verify
+  /app/backup.sh
+  # Should print: "Backup completed successfully"
