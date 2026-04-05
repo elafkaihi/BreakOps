@@ -1,0 +1,23 @@
+id: category-XXX
+title: "Your Lab Title"
+category: linux         # linux | kubernetes | terraform | cicd | aws
+difficulty: easy        # easy | medium | hard
+# docker_flags: --tmpfs /mount:size=150m   # optional extra docker run flags
+objective: "One sentence. What is broken and what must the user achieve."
+
+hints:
+  - "First hint — what general direction to look."
+  - "Second hint — what command or concept is relevant."
+  - "Third hint — narrowing in on the problem."
+  - "Fourth hint — almost the answer."
+
+solution: |
+  # Step 1 — Diagnose
+  some_command
+
+  # Step 2 — Fix
+  fix_command
+
+  # Step 3 — Verify
+  verify_command
+  # Expected output: ...

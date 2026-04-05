@@ -1,0 +1,35 @@
+id: linux-003
+title: "Service Won't Start"
+category: linux
+difficulty: medium
+objective: "nginx is down in production. It was working fine yesterday. It won't start. Find out why and fix it."
+
+hints:
+  - "Check nginx status and error output: nginx -t"
+  - "nginx -t will run a config test and show you exactly which file and line has a problem."
+  - "Read the error message carefully — it tells you the filename and line number."
+  - "There are two separate issues. Fix the first one, run nginx -t again, and you'll find the second."
+
+solution: |
+  # Step 1 — Test the config
+  nginx -t
+  # Error: unknown directive "server_nmae" in /etc/nginx/conf.d/app.conf:6
+
+  # Step 2 — Fix the typo in app.conf
+  vim /etc/nginx/conf.d/app.conf
+  # Line 6: change "server_nmae" to "server_name"
+
+  # Step 3 — Run nginx -t again
+  nginx -t
+  # Error: open() "/var/log/nginx/app_error.log" failed — no such file or directory
+
+  # Step 4 — Create the missing log directory
+  mkdir -p /var/log/nginx
+
+  # Step 5 — Start nginx
+  nginx
+  # or: nginx -s reload if already running
+
+  # Step 6 — Verify
+  nginx -t && echo "Config OK"
+  curl -s http://localhost | grep -i "welcome"

@@ -1,0 +1,30 @@
+id: linux-002
+title: "Permission Hell"
+category: linux
+difficulty: medium
+objective: "The deploy script is failing. The 'deploy' user can't run the app or read its config. Fix the permissions."
+
+hints:
+  - "Try running the deploy script as the deploy user: su - deploy -c '/app/deploy.sh'"
+  - "Use ls -la /app/ to inspect ownership and permissions on each file."
+  - "The deploy user needs execute permission on deploy.sh and read permission on config.yml."
+  - "chmod and chown are your friends. Think about who owns what and what permissions each file needs."
+
+solution: |
+  # Step 1 — See what's broken
+  ls -la /app/
+  su - deploy -c '/app/deploy.sh'
+  # You'll see permission denied errors
+
+  # Step 2 — Fix deploy.sh (needs to be executable by deploy user)
+  chmod 755 /app/deploy.sh
+  # or: chmod u+x,g+x,o+x /app/deploy.sh
+
+  # Step 3 — Fix config.yml (deploy needs to read it)
+  chown deploy:deploy /app/config.yml
+  chmod 640 /app/config.yml
+  # or simply: chmod 644 /app/config.yml
+
+  # Step 4 — Verify
+  su - deploy -c '/app/deploy.sh'
+  # Should print: "Deploy successful"

@@ -1,0 +1,241 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BREAKOPS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LABS_DIR="$BREAKOPS_DIR/labs"
+CURRENT_LAB_FILE="/tmp/.breakops_current_lab"
+HINT_INDEX_FILE="/tmp/.breakops_hint_index"
+CONTAINER_NAME="breakops-running"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+usage() {
+  echo -e "${BOLD}💥 BreakOps${RESET} — Learn DevOps by fixing what's broken"
+  echo ""
+  echo -e "Usage: ${CYAN}breakops <command> [lab-id]${RESET}"
+  echo ""
+  echo "Commands:"
+  echo "  start <lab-id>    Launch a broken lab environment"
+  echo "  list              List all available labs"
+  echo "  hint              Show the next progressive hint"
+  echo "  check             Validate your fix"
+  echo "  solution          Reveal the full solution"
+  echo "  reset             Reset the lab to its broken state"
+  echo "  stop              Stop and remove the current lab container"
+  echo ""
+  echo "Example:"
+  echo "  breakops start linux-001"
+}
+
+list_labs() {
+  echo -e "${BOLD}💥 Available Labs:${RESET}"
+  echo ""
+  printf "  ${BOLD}%-20s %-35s %-12s %s${RESET}\n" "ID" "TITLE" "DIFFICULTY" "CATEGORY"
+  echo "  ────────────────────────────────────────────────────────────────────"
+  for lab_dir in "$LABS_DIR"/*/; do
+    local name
+    name="$(basename "$lab_dir")"
+    [[ "$name" == "_template" ]] && continue
+    [[ ! -f "$lab_dir/scenario.yaml" ]] && continue
+
+    local id title difficulty category
+    id=$(grep "^id:" "$lab_dir/scenario.yaml" | awk '{print $2}')
+    title=$(grep "^title:" "$lab_dir/scenario.yaml" | sed 's/^title: "//' | sed 's/"$//')
+    difficulty=$(grep "^difficulty:" "$lab_dir/scenario.yaml" | awk '{print $2}')
+    category=$(grep "^category:" "$lab_dir/scenario.yaml" | awk '{print $2}')
+
+    case "$difficulty" in
+      easy)   diff_label="${GREEN}easy${RESET}" ;;
+      medium) diff_label="${YELLOW}medium${RESET}" ;;
+      hard)   diff_label="${RED}hard${RESET}" ;;
+      *)      diff_label="$difficulty" ;;
+    esac
+
+    printf "  %-20s %-35s %-20b %s\n" "$id" "$title" "$diff_label" "$category"
+  done
+  echo ""
+}
+
+find_lab_dir() {
+  local lab_id="$1"
+  for lab_dir in "$LABS_DIR"/*/; do
+    [[ ! -f "$lab_dir/scenario.yaml" ]] && continue
+    local id
+    id=$(grep "^id:" "$lab_dir/scenario.yaml" | awk '{print $2}')
+    if [[ "$id" == "$lab_id" ]]; then
+      echo "$lab_dir"
+      return 0
+    fi
+  done
+  return 1
+}
+
+get_docker_flags() {
+  local lab_dir="$1"
+  grep "^docker_flags:" "$lab_dir/scenario.yaml" 2>/dev/null | sed 's/^docker_flags: //' || echo ""
+}
+
+start_lab() {
+  local lab_id="${1:-}"
+  [[ -z "$lab_id" ]] && { echo -e "${RED}Usage: breakops start <lab-id>${RESET}"; list_labs; exit 1; }
+
+  local lab_dir
+  lab_dir=$(find_lab_dir "$lab_id") || {
+    echo -e "${RED}Lab '$lab_id' not found.${RESET}"
+    echo "Run 'breakops list' to see available labs."
+    exit 1
+  }
+
+  # Stop any existing lab
+  docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+
+  local title objective difficulty
+  title=$(grep "^title:" "$lab_dir/scenario.yaml" | sed 's/^title: "//' | sed 's/"$//')
+  objective=$(grep "^objective:" "$lab_dir/scenario.yaml" | sed 's/^objective: "//' | sed 's/"$//')
+  difficulty=$(grep "^difficulty:" "$lab_dir/scenario.yaml" | awk '{print $2}')
+  docker_flags=$(get_docker_flags "$lab_dir")
+
+  echo ""
+  echo -e "${RED}${BOLD}💥 BreakOps — $title${RESET}"
+  echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+  echo -e "  ${BOLD}Difficulty:${RESET} $difficulty"
+  echo -e "  ${BOLD}Objective:${RESET}  $objective"
+  echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+  echo ""
+  echo -e "  From another terminal:"
+  echo -e "    ${CYAN}breakops hint${RESET}      → progressive hint"
+  echo -e "    ${CYAN}breakops check${RESET}     → validate your fix"
+  echo -e "    ${CYAN}breakops solution${RESET}  → see the full solution"
+  echo ""
+
+  echo "$lab_id" > "$CURRENT_LAB_FILE"
+  echo "0" > "$HINT_INDEX_FILE"
+
+  local image_tag="breakops-$lab_id"
+  echo -e "${BLUE}⚙  Building lab environment...${RESET}"
+  docker build -t "$image_tag" "$lab_dir" -q
+
+  echo -e "${GREEN}✓  Environment ready. Dropping you in. Good luck. 🔧${RESET}"
+  echo ""
+
+  # shellcheck disable=SC2086
+  docker run --rm -it \
+    --name "$CONTAINER_NAME" \
+    --hostname "broken-server" \
+    $docker_flags \
+    "$image_tag" /bin/bash
+}
+
+show_hint() {
+  local lab_id
+  lab_id=$(cat "$CURRENT_LAB_FILE" 2>/dev/null) || {
+    echo -e "${RED}No active lab. Run 'breakops start <lab-id>' first.${RESET}"
+    exit 1
+  }
+
+  local lab_dir
+  lab_dir=$(find_lab_dir "$lab_id")
+
+  local hint_index
+  hint_index=$(cat "$HINT_INDEX_FILE" 2>/dev/null || echo "0")
+
+  # Extract hints lines
+  mapfile -t hints < <(grep "^  - " "$lab_dir/scenario.yaml" | sed "s/^  - \"//;s/\"$//")
+
+  local total=${#hints[@]}
+
+  if [[ $hint_index -ge $total ]]; then
+    echo -e "${YELLOW}No more hints available.${RESET}"
+    echo -e "Try ${CYAN}breakops solution${RESET} if you're truly stuck."
+    return
+  fi
+
+  echo ""
+  echo -e "${YELLOW}💡 Hint $((hint_index + 1))/$total:${RESET}"
+  echo -e "   ${hints[$hint_index]}"
+  echo ""
+  echo $((hint_index + 1)) > "$HINT_INDEX_FILE"
+}
+
+check_fix() {
+  local lab_id
+  lab_id=$(cat "$CURRENT_LAB_FILE" 2>/dev/null) || {
+    echo -e "${RED}No active lab. Run 'breakops start <lab-id>' first.${RESET}"
+    exit 1
+  }
+
+  # Check if container is running
+  if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo -e "${RED}Lab container is not running. Start the lab first with 'breakops start $lab_id'.${RESET}"
+    exit 1
+  fi
+
+  echo -e "${BLUE}⚙  Running validation...${RESET}"
+  echo ""
+  if docker exec "$CONTAINER_NAME" /bin/bash /check.sh; then
+    echo ""
+    echo -e "${GREEN}${BOLD}✅  Lab completed! Well done.${RESET}"
+    echo -e "    Move on: ${CYAN}breakops list${RESET}"
+  else
+    echo ""
+    echo -e "${RED}❌  Not fixed yet.${RESET}"
+    echo -e "    Try: ${CYAN}breakops hint${RESET}"
+  fi
+}
+
+show_solution() {
+  local lab_id
+  lab_id=$(cat "$CURRENT_LAB_FILE" 2>/dev/null) || {
+    echo -e "${RED}No active lab. Run 'breakops start <lab-id>' first.${RESET}"
+    exit 1
+  }
+
+  local lab_dir
+  lab_dir=$(find_lab_dir "$lab_id")
+
+  echo ""
+  echo -e "${BOLD}📖 Solution — $(grep "^title:" "$lab_dir/scenario.yaml" | sed 's/^title: "//' | sed 's/"$//')${RESET}"
+  echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+  # Extract the solution block (everything after "solution: |")
+  awk '/^solution: \|/{found=1; next} found{if(/^[a-z]/) exit; print}' "$lab_dir/scenario.yaml" | sed 's/^  //'
+  echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+  echo ""
+}
+
+reset_lab() {
+  local lab_id
+  lab_id=$(cat "$CURRENT_LAB_FILE" 2>/dev/null) || {
+    echo -e "${RED}No active lab.${RESET}"
+    exit 1
+  }
+  docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+  echo "0" > "$HINT_INDEX_FILE"
+  start_lab "$lab_id"
+}
+
+stop_lab() {
+  if docker rm -f "$CONTAINER_NAME" 2>/dev/null; then
+    echo -e "${GREEN}Lab stopped.${RESET}"
+  else
+    echo -e "${YELLOW}No active lab container found.${RESET}"
+  fi
+  rm -f "$CURRENT_LAB_FILE" "$HINT_INDEX_FILE"
+}
+
+case "${1:-}" in
+  start)    start_lab "${2:-}" ;;
+  list)     list_labs ;;
+  hint)     show_hint ;;
+  check)    check_fix ;;
+  solution) show_solution ;;
+  reset)    reset_lab ;;
+  stop)     stop_lab ;;
+  *)        usage ;;
+esac
