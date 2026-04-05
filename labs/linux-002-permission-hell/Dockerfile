@@ -23,13 +23,8 @@ COPY break.sh /break.sh
 COPY check.sh /check.sh
 RUN chmod +x /break.sh /check.sh
 
-RUN echo '\n\
-💥 BreakOps — linux-002: Permission Hell\n\
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\
-  The CI/CD pipeline failed at deploy step.\n\
-  The deploy user cant run the script or read config.\n\
-  You are logged in as root. Fix the permissions.\n\
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' >> /etc/bash.bashrc
+RUN printf '\n💥 BreakOps — linux-002: Permission Hell\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  The CI/CD pipeline failed at deploy step.\n  The deploy user cant run the script or read config.\n  You are logged in as root. Fix the permissions.\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' > /etc/motd
+RUN echo 'cat /etc/motd' >> /etc/bash.bashrc
 
 ENTRYPOINT ["/break.sh"]
 CMD ["/bin/bash"]

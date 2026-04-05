@@ -17,12 +17,8 @@ COPY check.sh /check.sh
 RUN chmod +x /break.sh /check.sh
 
 # MOTD shown on shell entry
-RUN echo '\n\
-💥 BreakOps — linux-001: Disk Full\n\
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\
-  The application stopped writing logs.\n\
-  On-call just pinged you. Fix it.\n\
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' >> /etc/bash.bashrc
+RUN printf '\n💥 BreakOps — linux-001: Disk Full\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n  The application stopped writing logs.\n  On-call just pinged you. Fix it.\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' > /etc/motd
+RUN echo 'cat /etc/motd' >> /etc/bash.bashrc
 
 ENTRYPOINT ["/break.sh"]
 CMD ["/bin/bash"]
