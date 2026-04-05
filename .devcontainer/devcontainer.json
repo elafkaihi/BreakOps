@@ -1,0 +1,17 @@
+{
+  "name": "BreakOps",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "postCreateCommand": "chmod +x ./install.sh ./breakops && sudo ln -sf $(pwd)/breakops /usr/local/bin/breakops && echo '✅ BreakOps ready! Run: breakops list'",
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "timonwong.shellcheck"
+      ]
+    }
+  }
+}
