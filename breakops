@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BREAKOPS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+BREAKOPS_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 LABS_DIR="$BREAKOPS_DIR/labs"
 CURRENT_LAB_FILE="/tmp/.breakops_current_lab"
 HINT_INDEX_FILE="/tmp/.breakops_hint_index"
